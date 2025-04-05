@@ -172,3 +172,9 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Project files
+ny_taxi_postgres_data/
+data_loader/data/
+kaggle.json
+gcp_service_acc_key.json
