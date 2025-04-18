@@ -1,0 +1,116 @@
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 5
+    networks:
+      - airflow-network
+
+  airflow-init:
+    env_file:
+      - .env
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__FERNET_KEY: ''
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      PYTHONPATH: /opt/airflow/dags/scripts  # Add scripts directory to PYTHONPATH
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./gcp_credentials.json:/opt/airflow/gcp_credentials.json
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        export GOOGLE_APPLICATION_CREDENTIALS=/opt/airflow/gcp_credentials.json
+        airflow db reset
+        airflow db init
+    networks:
+      - airflow-network
+
+  airflow-webserver:
+    env_file:
+      - .env
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__FERNET_KEY: ''
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__WEBSERVER__AUTH_BACKEND: airflow.www.security.backend.auth_backend
+      _AIRFLOW_WWW_USER_USERNAME: airflow
+      _AIRFLOW_WWW_USER_PASSWORD: airflow
+      PYTHONPATH: /opt/airflow/dags/scripts  # Add scripts directory to PYTHONPATH
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./gcp_credentials.json:/opt/airflow/gcp_credentials.json
+    ports:
+      - "8080:8080"
+    command: >
+      bash -c "
+      airflow db upgrade &&
+      airflow users create --username airflow --firstname Airflow --lastname Admin --role Admin --email admin@example.com --password airflow &&
+      airflow webserver
+      "
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 10s
+      retries: 5
+    networks:
+      - airflow-network
+
+  airflow-scheduler:
+    env_file:
+      - .env
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__FERNET_KEY: ''
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__WEBSERVER__AUTH_BACKEND: airflow.www.security.backend.auth_backend
+      # PYTHONPATH: /opt/airflow/dags/scripts
+      PYTHONPATH: /opt/airflow/dags/scripts # Add scripts directory to PYTHONPATH
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./gcp_credentials.json:/opt/airflow/gcp_credentials.json
+    command: scheduler
+    networks:
+      - airflow-network
+
+volumes:
+  postgres_data:
+
+networks:
+  airflow-network:

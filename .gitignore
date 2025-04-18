@@ -177,5 +177,6 @@ cython_debug/
 data_loader/data/
 ny_taxi_postgres_data/
 bronze/gcp_service_acc_key.json
+airflow-etl-pipeline/gcp_credentials.json
 kaggle.json
 gcp_service_acc_key.json
