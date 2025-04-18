@@ -8,19 +8,9 @@ def load_products(input, output):
         .appName("ProductLoad") \
         .getOrCreate()
 
-    # Read raw data from GCS (Bronze layer)
+    # Read data from GCS (Silver layer)
     # input_path = f"gs://{GCP_BUCKET}/bronze/products*.parquet"
     df = spark.read.parquet(input)
-    
-
-    # Silver layer transformation: Clean data
-    # silver_df = df \
-    #     .filter(col("sale_id").isNotNull() & col("amount").isNotNull()) \
-    #     .withColumn("amount", col("amount").cast("float")) \
-    #     .withColumn("sale_date", col("sale_date").cast("timestamp"))
-
-    # Write transformed data to GCS (Silver layer)
-    # output_path = f"gs://{GCP_BUCKET}/silver/products.parquet"
     
     df.write.mode("overwrite").parquet(output)
 

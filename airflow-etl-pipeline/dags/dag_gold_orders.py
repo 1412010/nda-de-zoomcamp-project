@@ -42,15 +42,6 @@ with DAG(
     # Dummy start task
     start = DummyOperator(task_id='start')
 
-    # Move raw input file if needed (optional)
-    # move_raw_to_staging = GCSToGCSOperator(
-    #     task_id="move_bronze_to_staging",
-    #     source_bucket=bucket_name,
-    #     source_object="bronze/orders*.parquet",
-    #     destination_bucket="staging-bucket",
-    #     destination_object="staging/input.csv",
-    #     move_object=False
-    # )
     upload_script = PythonOperator(
         task_id="upload_script_to_gcs",
         python_callable=upload_file_to_gcs,
@@ -85,4 +76,3 @@ with DAG(
     end = DummyOperator(task_id='end')
 
     start >> upload_script >> run_dataproc >> end
-    # start >> upload_script >> end
