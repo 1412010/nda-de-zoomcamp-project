@@ -1,6 +1,4 @@
-# nda-de-zoomcamp-project
-
-# Data Engineering Zoomcamp Project: Instacart "Add-to-cart" ORDER Analysis Pipeline
+# DE Zoomcamp Project: Instacart "Add-to-cart" ORDER Analysis Pipeline
 
 ## Overview
 
@@ -22,6 +20,8 @@ The dataset used is the **Instacart Online Grocery Shopping Dataset 2017**, publ
 - **Order-Products** (`order_products__train.csv`, `order_products__prior.csv`): Links orders to products (`order_id`, `product_id`, `add_to_cart_order`, `reordered`).
 
 ## Architecture
+
+![alt text](images/image-00.png)
 
 The pipeline follows the Medallion Architecture:
 
